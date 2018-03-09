@@ -5,3 +5,5 @@
 .settings
 build/
 bin/
+data.db
+config.properties

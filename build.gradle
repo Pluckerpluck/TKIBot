@@ -27,11 +27,17 @@ repositories {
 dependencies {
     // This dependency is found on compile classpath of this component and consumers.
     compile 'net.dv8tion:JDA:3.5.1_345'
+    compile group: 'org.mapdb', name: 'mapdb', version: '3.0.5'
 
     // Use JUnit test framework
     testCompile 'junit:junit:4.12'
 }
 
+run {
+    // Used to allow safe exit while running with gradle
+    standardInput = System.in
+}
+
 // Define the main class for the application
-mainClassName = 'com.pluckerpluck.gw2roast.Bot'
+mainClassName = 'com.pluckerpluck.tkibot.Bot'
 
