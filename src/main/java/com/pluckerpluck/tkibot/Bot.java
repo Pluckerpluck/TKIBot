@@ -93,7 +93,6 @@ public class Bot extends ListenerAdapter {
   public void onMessageReceived(MessageReceivedEvent event) {
     // Looking for any uploaded files
     if (event.getMessage().getAttachments().size() > 0) {
-      event.getTextChannel().sendTyping().queue();
       Thread thread = new Thread(new ParseMessageAttachements(event));
       thread.start();
     }

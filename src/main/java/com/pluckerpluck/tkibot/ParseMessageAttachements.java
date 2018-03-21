@@ -6,9 +6,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nullable;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.Gson;
+import com.pluckerpluck.tkibot.dpsreport.DPSReport;
 
 import net.dv8tion.jda.core.MessageBuilder;
 import net.dv8tion.jda.core.entities.Message.Attachment;
@@ -29,7 +28,7 @@ public class ParseMessageAttachements implements Runnable {
     }
 
     @Nullable
-    private String processAttachement(Attachment attachment) {
+    private DPSReport processAttachement(Attachment attachment) {
 
         byte[] fileData = new byte[] {};
         try (InputStream stream = attachment.getInputStream()) {
@@ -56,15 +55,17 @@ public class ParseMessageAttachements implements Runnable {
                 response.close();
                 return null;
             }
-            JsonObject jsonObject = new JsonParser().parse(response.body().string()).getAsJsonObject();
-            JsonElement jsonURL = jsonObject.get("permalink");
-            if (jsonURL == null) {
-                System.out.println(response);
+            Gson gson = new Gson();
+            String responseBody = response.body().string();
+            DPSReport report = gson.fromJson(responseBody, DPSReport.class);
+
+            if (report == null) {
+                System.out.println(responseBody);
                 response.close();
                 return null;
             } else {
                 response.close();
-                return jsonURL.getAsString();
+                return report;
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -76,21 +77,23 @@ public class ParseMessageAttachements implements Runnable {
     @Override
     public void run() {
         MessageBuilder message = new MessageBuilder();
-        message.append("DPS Log: ");
         Attachment attachment = event.getMessage().getAttachments().get(0);
         // Look for correct extensions
         if (attachment.getFileName().endsWith(".evtc") || attachment.getFileName().endsWith(".evtc.zip")) {
-            String url = processAttachement(attachment);
-            if (url == null) {
-                event.getTextChannel().sendMessage("An error has occurred :(").queue();
-                return;
+            event.getTextChannel().sendTyping().queue();
+            DPSReport report = processAttachement(attachment);
+            
+            if (report.hasError()) {
+                message.append("An error has occurred: \n").append(report.getError());
             } else {
-                message.append(url).append("\n");
-            }
-        
-            // No Delete Method
-            if (!event.getMessage().getContentRaw().contains("noDelete")) {
-                event.getMessage().delete().queue();
+                String url = report.getPermalink();
+                System.out.println(url);
+                String bossName = report.getBossName();
+                message.append(bossName).append(": ").append(url);
+                // No Delete Method
+                if (!event.getMessage().getContentRaw().contains("noDelete")) {
+                    event.getMessage().delete().queue();
+                }
             }
             event.getTextChannel().sendMessage(message.build()).queue();
         }
