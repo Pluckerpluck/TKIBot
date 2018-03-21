@@ -3,25 +3,49 @@ package com.pluckerpluck.tkibot;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+
+import javax.annotation.Nullable;
 import javax.security.auth.login.LoginException;
 import com.google.common.base.Strings;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.jagrosh.jdautilities.command.CommandClient;
+import com.jagrosh.jdautilities.command.CommandClientBuilder;
+
+import com.pluckerpluck.tkibot.commands.SetStreamerRole;
 import com.pluckerpluck.tkibot.db.DataInterface;
 import com.pluckerpluck.tkibot.db.mapdb.MapDBInterface;
 
 import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
+import net.dv8tion.jda.core.MessageBuilder;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.ChannelType;
 import net.dv8tion.jda.core.entities.Game;
 import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.core.entities.MessageType;
 import net.dv8tion.jda.core.entities.Role;
+import net.dv8tion.jda.core.entities.Message.Attachment;
+import net.dv8tion.jda.core.events.message.MessageEmbedEvent;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.events.user.UserGameUpdateEvent;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
+import net.dv8tion.jda.core.handle.EventCache.Type;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import okhttp3.FormBody;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class Bot extends ListenerAdapter {
   public static void main(String[] args)
@@ -38,13 +62,25 @@ public class Bot extends ListenerAdapter {
 
     MapDBInterface dataInterface = new MapDBInterface("data.db");
 
+    CommandClientBuilder builder = new CommandClientBuilder();
+    builder.setOwnerId("118825758184439808");
+
+    // Set your bot's prefix
+    builder.setPrefix("^");
+
+    builder.addCommand(new SetStreamerRole(dataInterface));
+
+    CommandClient client = builder.build();
+
     JDA jda = new JDABuilder(AccountType.BOT).setToken(DISCORD_TOKEN).buildBlocking();
     jda.addEventListener(new Bot(dataInterface));
+    jda.addEventListener(client);
 
     // Multithread safe exit
     System.in.read();
     dataInterface.close();
     jda.shutdown();
+    System.exit(0);
   }
 
   private final DataInterface dataInterface;
@@ -55,29 +91,11 @@ public class Bot extends ListenerAdapter {
 
   @Override
   public void onMessageReceived(MessageReceivedEvent event) {
-    if (event.isFromType(ChannelType.PRIVATE)) {
-      System.out.printf("[PM] %s: %s\n", event.getAuthor().getName(), event.getMessage().getContentRaw());
-    } else {
-      System.out.printf("[%s][%s] %s: %s\n", event.getGuild().getName(), event.getTextChannel().getName(),
-          event.getMember().getEffectiveName(), event.getMessage().getContentRaw());
-
-      // Hardcode setting this for now
-      if (event.getMessage().getContentRaw().startsWith("!setStreamerRole")){
-        // Hardcode need for "ModifyRoles" permission
-        if(event.getAuthor() == null || !event.getMember().hasPermission(Permission.MANAGE_ROLES)){
-          event.getChannel().sendMessage("You don't have permission to change this").queue();
-          return;
-        }
-
-        List<Role> roles = event.getMessage().getMentionedRoles();
-        if (roles.size() > 0) {
-          dataInterface.getGuildOptions(event.getGuild()).setDiscordStreamersRole(roles.get(0));
-          event.getChannel().sendMessage("New streamer role set: " + roles.get(0).getName()).queue();
-        } else {
-          dataInterface.getGuildOptions(event.getGuild()).setDiscordStreamersRole(null);
-          event.getChannel().sendMessage("Streamer role removed").queue();
-        }
-      }
+    // Looking for any uploaded files
+    if (event.getMessage().getAttachments().size() > 0) {
+      event.getTextChannel().sendTyping().queue();
+      Thread thread = new Thread(new ParseMessageAttachements(event));
+      thread.start();
     }
   }
 
@@ -96,13 +114,11 @@ public class Bot extends ListenerAdapter {
     if (game != null) {
       String url = event.getMember().getGame().getUrl();
       if (url != null) {
-        guild.getController()
-            .addSingleRoleToMember(event.getMember(), role).queue();
+        guild.getController().addSingleRoleToMember(event.getMember(), role).queue();
         return;
       }
     }
-    guild.getController()
-        .removeSingleRoleFromMember(event.getMember(), role).queue();
+    guild.getController().removeSingleRoleFromMember(event.getMember(), role).queue();
   }
 
   public static Properties loadProperties() {

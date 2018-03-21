@@ -26,11 +26,14 @@ repositories {
 
 dependencies {
     // This dependency is found on compile classpath of this component and consumers.
-    compile 'net.dv8tion:JDA:3.5.1_345'
-    compile group: 'org.mapdb', name: 'mapdb', version: '3.0.5'
+    implementation 'net.dv8tion:JDA:3.5.1_345'
+    implementation 'com.squareup.okhttp3:okhttp:3.10.0'
+    implementation 'com.jagrosh:jda-utilities:2.1'
+    implementation group: 'org.mapdb', name: 'mapdb', version: '3.0.5'
+    implementation 'com.google.code.gson:gson:2.8.2'
 
     // Use JUnit test framework
-    testCompile 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.12'
 }
 
 run {
