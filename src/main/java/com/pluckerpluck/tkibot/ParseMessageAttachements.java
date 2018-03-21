@@ -87,12 +87,13 @@ public class ParseMessageAttachements implements Runnable {
             } else {
                 message.append(url).append("\n");
             }
+        
+            // No Delete Method
+            if (!event.getMessage().getContentRaw().contains("noDelete")) {
+                event.getMessage().delete().queue();
+            }
+            event.getTextChannel().sendMessage(message.build()).queue();
         }
-        // No Delete Method
-        if (!event.getMessage().getContentRaw().contains("noDelete")) {
-            event.getMessage().delete().queue();
-        }
-        event.getTextChannel().sendMessage(message.build()).queue();
     }
 
 }
