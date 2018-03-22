@@ -24,6 +24,8 @@ public class DPSReport {
         bossIDs.put(0x4314, "Mursaat Overseer");
         bossIDs.put(0x4324, "Samarog");
         bossIDs.put(0x4302, "Deimos");
+        bossIDs.put(0x4d37, "Soulless Horror");
+        bossIDs.put(0x4bfa, "Dhuum");
 
         bossIDs.put(0x427d, "MAMA");
         bossIDs.put(0x4284, "Siax");
