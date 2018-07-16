@@ -59,7 +59,6 @@ public class ParseMessageAttachements implements Runnable {
                 response.close();
                 return null;
             }
-            logger.info("{}", response);
             Gson gson = new Gson();
             String responseBody = response.body().string();
             DPSReport report = gson.fromJson(responseBody, DPSReport.class);
@@ -92,6 +91,7 @@ public class ParseMessageAttachements implements Runnable {
                 message.append("An error has occurred: \n").append(report.getError());
             } else {
                 String url = report.getPermalink();
+                logger.info("Successfully found url: {}", url);
                 String bossName = report.getBossName();
                 message.append(bossName).append(": ").append(url);
                 // No Delete Method
