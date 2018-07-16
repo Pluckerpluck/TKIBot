@@ -9,6 +9,9 @@ import javax.annotation.Nullable;
 import com.google.gson.Gson;
 import com.pluckerpluck.tkibot.dpsreport.DPSReport;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import net.dv8tion.jda.core.MessageBuilder;
 import net.dv8tion.jda.core.entities.Message.Attachment;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
@@ -20,7 +23,8 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class ParseMessageAttachements implements Runnable {
-
+    static Logger logger = LoggerFactory.getLogger(ParseMessageAttachements.class);
+    
     private MessageReceivedEvent event;
 
     public ParseMessageAttachements(MessageReceivedEvent event) {
@@ -51,10 +55,11 @@ public class ParseMessageAttachements implements Runnable {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                System.out.println(response);
+                logger.error("Response not successful: {}", response);
                 response.close();
                 return null;
             }
+            logger.info("{}", response);
             Gson gson = new Gson();
             String responseBody = response.body().string();
             DPSReport report = gson.fromJson(responseBody, DPSReport.class);
@@ -87,7 +92,6 @@ public class ParseMessageAttachements implements Runnable {
                 message.append("An error has occurred: \n").append(report.getError());
             } else {
                 String url = report.getPermalink();
-                System.out.println(url);
                 String bossName = report.getBossName();
                 message.append(bossName).append(": ").append(url);
                 // No Delete Method

@@ -22,6 +22,9 @@ import com.pluckerpluck.tkibot.commands.SetStreamerRole;
 import com.pluckerpluck.tkibot.db.DataInterface;
 import com.pluckerpluck.tkibot.db.mapdb.MapDBInterface;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
@@ -48,6 +51,9 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class Bot extends ListenerAdapter {
+  static Logger logger = LoggerFactory.getLogger(Bot.class);
+
+
   public static void main(String[] args)
       throws LoginException, RateLimitedException, InterruptedException, IOException {
 
@@ -75,6 +81,8 @@ public class Bot extends ListenerAdapter {
     JDA jda = new JDABuilder(AccountType.BOT).setToken(DISCORD_TOKEN).buildBlocking();
     jda.addEventListener(new Bot(dataInterface));
     jda.addEventListener(client);
+
+    logger.info("TKI Bot Ready!");
 
     // Multithread safe exit
     System.in.read();
@@ -112,12 +120,16 @@ public class Bot extends ListenerAdapter {
     Game game = event.getCurrentGame();
     if (game != null) {
       String url = event.getMember().getGame().getUrl();
-      if (url != null) {
+      if (url != null && !game.equals(event.getPreviousGame())) {
+        logger.info("{} is now streaming", event.getMember().getNickname());
         guild.getController().addSingleRoleToMember(event.getMember(), role).queue();
         return;
       }
     }
-    guild.getController().removeSingleRoleFromMember(event.getMember(), role).queue();
+    if(event.getMember().getRoles().contains(role)) {
+      logger.info("{} is no longer streaming", event.getMember().getNickname());
+      guild.getController().removeSingleRoleFromMember(event.getMember(), role).queue();
+    }
   }
 
   public static Properties loadProperties() {

@@ -7,7 +7,7 @@ public class DPSReport {
     private String permalink;
     private String error;
 
-    private Metadata metadata;
+    private EVTC evtc;
 
     private static Map<Integer, String> bossIDs;
 
@@ -37,11 +37,6 @@ public class DPSReport {
     }
 
 
-
-    private static class Metadata {
-        private EVTC evtc;
-    }
-
     private static class EVTC {
         private int bossId;
     }
@@ -59,13 +54,13 @@ public class DPSReport {
     }
 
     public int getBossId() {
-        return metadata.evtc.bossId;
+        return evtc.bossId;
     }
 
     public String getBossName() {
-        String name = bossIDs.get(metadata.evtc.bossId);
+        String name = bossIDs.get(evtc.bossId);
         if (name == null){
-            name = String.valueOf(metadata.evtc.bossId); 
+            name = String.valueOf(evtc.bossId); 
         }
         return name;
     }
