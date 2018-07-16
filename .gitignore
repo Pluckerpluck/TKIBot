@@ -7,3 +7,4 @@ build/
 bin/
 data.db
 config.properties
+data.db.wal.0
