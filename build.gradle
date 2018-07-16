@@ -32,6 +32,9 @@ dependencies {
     implementation group: 'org.mapdb', name: 'mapdb', version: '3.0.5'
     implementation 'com.google.code.gson:gson:2.8.2'
 
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+    implementation group: 'org.slf4j', name: 'slf4j-jdk14', version: '1.7.25'
+
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
 }
